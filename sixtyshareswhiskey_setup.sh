@@ -292,3 +292,5 @@ sudo systemctl restart hostapd
 sudo systemctl restart dnsmasq
 
 echo "[✓] SixtySharesWhiskey is ready. Connect to the hotspot and visit http://10.10.10.1"
+echo "Thank you for installing, God Bless!"
+echo "- Sixty"
