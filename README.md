@@ -27,20 +27,22 @@ A. Transfer the file to your pi using SFTP
 
 OR
 
-B. Use the command sudo nano sixtyshareswhiskey_setup.sh and then copy and paste in the script contents 
+B. Use the command ```sudo nano sixtyshareswhiskey_setup.sh``` and then copy and paste in the script contents 
 
 Either way, under "/etc/hostapd/hostapd.conf" edit the wpa_passphrase to a password of your choosing. 
+
 Feel free to change the SSID as well to whatever you want!
+
 Now in nano hit Ctrl + x and save the changes you made.
 
-Now run chmod +x sixtyshareswhiskey_setup.sh to make the script executeable
-And then run sudo ./sixtyshareswhiskey_setup.sh to run the installer
+Now run ```chmod +x sixtyshareswhiskey_setup.sh``` to make the script executeable
+And then run ```sudo ./sixtyshareswhiskey_setup.sh``` to run the installer
 
 # After setup:
 
 The Pi will broadcast a Wi-Fi hotspot (by default named SixtySharesWhiskey)
 
-Connect to it, (default wifi pw is "CHANGEME") then open http://10.10.10.1 in your browser!
+Connect to it, (default wifi pw is "CHANGEME") then open ```http://10.10.10.1``` in your browser!
 
 # Overview
 
