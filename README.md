@@ -24,7 +24,9 @@ The script creates a local Wi-Fi network with no internet connection where users
 - Edit the WiFi PW by doing the following
 
 A. Transfer the file to your pi using SFTP
+
 OR
+
 B. Use the command sudo nano sixtyshareswhiskey_setup.sh and then copy and paste in the script contents 
 
 Either way, under "/etc/hostapd/hostapd.conf" edit the wpa_passphrase to a password of your choosing. 
