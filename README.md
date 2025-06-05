@@ -25,7 +25,7 @@ The script creates a local Wi-Fi network with no internet connection where users
 
 3. Transfer and configure the setup script:
 
-# BEFORE TRANSFERRING THE FILE ENSURE THAT YOU: 
+# BEFORE YOU TRANSFER THE FILE ENSURE THAT YOU: 
 1. OPEN THE SCRIPT IN SOMETHING LIKE NOTEPAD++
 2. CHANGE THE COUNTRY CODE TO YOUR COUNTRY
 3. CHNAGE THE WPA PASSPHRASE
@@ -37,7 +37,7 @@ The script creates a local Wi-Fi network with no internet connection where users
 
 ![What to change](https://github.com/user-attachments/assets/8ada6058-f5dd-45e7-b60f-f7770d4bb9ec)
 
-
+# Transfering the file
 
 A. Transfer the file to your pi using SFTP
 
@@ -45,11 +45,10 @@ OR
 
 B. Use the command ```sudo nano sixtyshareswhiskey_setup.sh``` and then copy and paste in the script contents 
 
-Either way, under "/etc/hostapd/hostapd.conf" edit the wpa_passphrase to a password of your choosing. 
-
-Feel free to change the SSID as well to whatever you want!
 
 Now in nano hit Ctrl + x and save the changes you made.
+
+# Run the script!
 
 Now run ```chmod +x sixtyshareswhiskey_setup.sh``` to make the script executeable
 And then run ```sudo ./sixtyshareswhiskey_setup.sh``` to run the installer
