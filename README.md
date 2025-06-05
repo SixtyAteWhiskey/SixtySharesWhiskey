@@ -13,8 +13,7 @@ The script creates a local Wi-Fi network with no internet connection where users
 
 - Files are automatically deleted every day at 0000
 
-
-<img width="687" alt="Screenshot 2025-06-04 at 21 53 28" src="https://github.com/user-attachments/assets/dd7aa456-a9fb-44fb-8e87-0970593c96d3" />
+<img width="602" alt="Screenshot 2025-06-04 at 23 58 23" src="https://github.com/user-attachments/assets/c4e95eb2-8d52-469b-a40b-a92c2d34f5f7" />
 
 
 # To start
