@@ -51,7 +51,8 @@ Now in nano hit Ctrl + x and save the changes you made.
 # Run the script!
 
 Now run ```chmod +x sixtyshareswhiskey_setup.sh``` to make the script executeable
-And then run ```sudo ./sixtyshareswhiskey_setup.sh``` to run the installer
+
+Run ```sudo ./sixtyshareswhiskey_setup.sh``` to run the installer
 
 # After setup:
 
