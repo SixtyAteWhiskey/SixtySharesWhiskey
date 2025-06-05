@@ -1,7 +1,7 @@
 # SixtySharesWhiskey
 A lightweight dead-drop style wireless file transfer
 
-This is a self-contained, anonymous media-sharing hotspot inspired by PirateBox and designed to run on any Raspberry Pi (starting with Raspberry Pi 4) using Ubuntu Server 24.04 LTS.
+This is a self-contained, anonymous media-sharing hotspot inspired by PirateBox and designed to run on any Raspberry Pi (starting with Raspberry Pi 4) using Raspberry Pi OS Lite 64 bit.
 
 The script creates a local Wi-Fi network with no internet connection where users can:
 
@@ -15,7 +15,7 @@ The script creates a local Wi-Fi network with no internet connection where users
 
 # Installation
 
-1. Flash Ubuntu Server 24.04.2 LTS to your Raspberry Pi
+1. Flash Raspberry Pi OS Lite 64 bit to your Raspberry Pi
 
 2. Boot and connect via SSH or terminal
 
