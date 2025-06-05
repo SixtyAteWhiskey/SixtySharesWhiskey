@@ -54,6 +54,9 @@ Now run ```chmod +x sixtyshareswhiskey_setup.sh``` to make the script executeabl
 
 Run ```sudo ./sixtyshareswhiskey_setup.sh``` to run the installer
 
+***During the install, the script will request that you set your WLAN Country.***
+*DO NOT SKIP THIS, the script will not work without it!!*
+
 # After setup:
 
 The Pi will broadcast a Wi-Fi hotspot (by default named SixtySharesWhiskey)
