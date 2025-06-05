@@ -38,7 +38,7 @@ The script creates a local Wi-Fi network with no internet connection where users
 
 ![What to change](https://github.com/user-attachments/assets/8ada6058-f5dd-45e7-b60f-f7770d4bb9ec)
 
-# Transfering the file
+# Transferring the file
 
 A. Transfer the file to your pi using SFTP
 
