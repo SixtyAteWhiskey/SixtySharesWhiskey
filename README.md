@@ -11,7 +11,7 @@ The script creates a local Wi-Fi network with no internet connection where users
 
 - See upload progress
 
-- Files are automatically deleted after 24 hours
+- Files are automatically deleted every day at 0000
 
 
 <img width="687" alt="Screenshot 2025-06-04 at 21 53 28" src="https://github.com/user-attachments/assets/dd7aa456-a9fb-44fb-8e87-0970593c96d3" />
