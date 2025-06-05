@@ -13,6 +13,8 @@ The script creates a local Wi-Fi network with no internet connection where users
 
 - Files are automatically deleted every day at 0000
 
+- New anonymous chat feature! (v1.2.1)
+
 <img width="602" alt="Screenshot 2025-06-04 at 23 58 23" src="https://github.com/user-attachments/assets/c4e95eb2-8d52-469b-a40b-a92c2d34f5f7" />
 
 
