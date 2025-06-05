@@ -25,7 +25,14 @@ The script creates a local Wi-Fi network with no internet connection where users
 
 3. Transfer and configure the setup script:
 
-- Edit the WiFi PW by doing the following
+- ENSURE THAT YOU: 
+1. CHANGE THE COUNTRY CODE TO YOUR COUNTRY
+2. CHNAGE THE WPA PASSPHRASE
+3. (Optional) CHANGE THE SSID
+
+![What to change](https://github.com/user-attachments/assets/8ada6058-f5dd-45e7-b60f-f7770d4bb9ec)
+
+
 
 A. Transfer the file to your pi using SFTP
 
