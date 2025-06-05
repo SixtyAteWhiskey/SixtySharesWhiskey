@@ -25,10 +25,15 @@ The script creates a local Wi-Fi network with no internet connection where users
 
 3. Transfer and configure the setup script:
 
-- ENSURE THAT YOU: 
-1. CHANGE THE COUNTRY CODE TO YOUR COUNTRY
-2. CHNAGE THE WPA PASSPHRASE
-3. (Optional) CHANGE THE SSID
+# BEFORE TRANSFERRING THE FILE ENSURE THAT YOU: 
+1. OPEN THE SCRIPT IN SOMETHING LIKE NOTEPAD++
+2. CHANGE THE COUNTRY CODE TO YOUR COUNTRY
+3. CHNAGE THE WPA PASSPHRASE
+4. (Optional) CHANGE THE SSID
+5. VERIFY THAT YOU SAVE THE FILE WITH UNIX LF
+
+![image](https://github.com/user-attachments/assets/38fff35c-15e0-4a19-8319-fedacf2595fd)
+
 
 ![What to change](https://github.com/user-attachments/assets/8ada6058-f5dd-45e7-b60f-f7770d4bb9ec)
 
