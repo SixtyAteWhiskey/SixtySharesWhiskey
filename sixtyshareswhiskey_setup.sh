@@ -98,6 +98,7 @@ Wants=network-online.target dhcpcd.service
 After=network-online.target dhcpcd.service
 EOL
 
+sudo systemctl unmask hostapd
 sudo systemctl daemon-reload
 sudo systemctl enable hostapd
 
