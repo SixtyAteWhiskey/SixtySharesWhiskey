@@ -64,7 +64,8 @@ Run ```sudo ./sixtyshareswhiskey_setup.sh``` to run the installer
 
 The Pi will broadcast a Wi-Fi hotspot (by default named SixtySharesWhiskey)
 
-Connect to it, (default wifi pw is "CHANGEME") then open ```http://10.10.10.1``` in your browser!
+Connect to it, (default wifi pw is "CHANGEME") then open ```https://10.10.10.1``` in your browser!
+Due to usage of self-signed certificates you will see a warning - ignore it.
 
 # Overview
 

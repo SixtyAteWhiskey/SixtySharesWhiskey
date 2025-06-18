@@ -114,41 +114,65 @@ sudo sysctl -p
 echo "[*] Setting up NGINX for web GUI..."
 sudo mkdir -p /srv/sixtyshareswhiskey/uploads
 sudo touch /srv/sixtyshareswhiskey/chat.log
-sudo chmod -R 777 /srv/sixtyshareswhiskey
+sudo find /srv/sixtyshareswhiskey -type d -exec chmod 755 {}
+sudo find /srv/sixtyshareswhiskey -type f -exec chmod 644 {}
+
+
+echo "[*] Preparing certificates..."
+sudo openssl req -x509 -newkey rsa:4096 \
+  -keyout /srv/sixtyshareswhiskey/certs/key.pem \
+  -out /srv/sixtyshareswhiskey/certs/cert.pem \
+  -days 1 \
+  -nodes \
+  -subj "/C=XX/ST=$HOSTNAME/L=$HOSTNAME/O=$HOSTNAME/OU=$HOSTNAME/CN=127.0.0.1"
+sudo chmod 600 /srv/sixtyshareswhiskey/certs/key.pem
+sudo chmod 644 /srv/sixtyshareswhiskey/certs/cert.pem
+
 
 sudo tee /etc/nginx/sites-available/sixtyshareswhiskey > /dev/null <<EOL
 server {
     listen 80 default_server;
     server_name _;
 
-    # Allow large uploads
+    # Redirect all HTTP requests to HTTPS
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name _;
+
+    ssl_certificate /srv/sixtyshareswhiskey/certs/cert.pem;
+    ssl_certificate_key /srv/sixtyshareswhiskey/certs/key.pem;
+
+    # Allow large uploads without limit
     client_max_body_size 0;
 
     root /srv/sixtyshareswhiskey;
     index index.html;
 
-    # Serve index.html and static assets
+    # Serve static files
     location / {
-        try_files \$uri \$uri/ =404;
+        try_files $uri $uri/ =404;
     }
 
-    # Proxy both GET and POST /upload to Flask
+    # Proxy /upload to Flask app on localhost:5000
     location /upload {
         proxy_pass        http://127.0.0.1:5000;
-        proxy_set_header  Host              \$host;
-        proxy_set_header  X-Real-IP         \$remote_addr;
-        proxy_set_header  X-Forwarded-For   \$proxy_add_x_forwarded_for;
+        proxy_set_header  Host              $host;
+        proxy_set_header  X-Real-IP         $remote_addr;
+        proxy_set_header  X-Forwarded-For   $proxy_add_x_forwarded_for;
     }
 
-    # Proxy both GET and POST /chat to Flask
+    # Proxy /chat to Flask app on localhost:5000
     location /chat {
         proxy_pass        http://127.0.0.1:5000;
-        proxy_set_header  Host              \$host;
-        proxy_set_header  X-Real-IP         \$remote_addr;
-        proxy_set_header  X-Forwarded-For   \$proxy_add_x_forwarded_for;
+        proxy_set_header  Host              $host;
+        proxy_set_header  X-Real-IP         $remote_addr;
+        proxy_set_header  X-Forwarded-For   $proxy_add_x_forwarded_for;
     }
 
-    # Serve the uploads directory as /uploads
+    # Serve uploads directory with directory listing enabled
     location /uploads {
         alias /srv/sixtyshareswhiskey/uploads;
         autoindex on;
@@ -178,6 +202,7 @@ source /srv/sixtyshareswhiskey/venv/bin/activate
 echo "[*] Creating Flask backend (with anonymous chat)..."
 cat <<'EOF' > /srv/sixtyshareswhiskey/app.py
 from flask import Flask, request, jsonify
+from flask_bcrypt import Bcrypt
 import os
 from datetime import datetime
 
@@ -185,6 +210,17 @@ UPLOAD_FOLDER = '/srv/sixtyshareswhiskey/uploads'
 CHAT_LOG = '/srv/sixtyshareswhiskey/chat.log'
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+##TLS settings
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.minimum_version = ssl.TLSVersion.TLSv1_2
+context.maximum_version = ssl.TLSVersion.TLSv1_3
+context.set_ciphers("ECDHE+AESGCM:ECDHE+CHACHA20")
+context.set_ecdh_curve("X25519")
+context.options |= ssl.OP_CIPHER_SERVER_PREFERENCE
+context.options |= ssl.OP_NO_COMPRESSION
+context.load_cert_chain(certfile='/srv/sixtyshareswhiskey/certs/cert.pem', keyfile='/srv/sixtyshareswhiskey/certs/key.pem')
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -226,7 +262,7 @@ def post_chat():
     return "Message received", 200
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(ssl_context=context, host="127.0.0.1", port=5000)
 EOF
 
 echo "[*] Installing minimal HTML frontend (with upload + chat)..."
@@ -408,6 +444,18 @@ cat <<'EOF' > /srv/sixtyshareswhiskey/cleanup.sh
 #!/bin/bash
 cd /srv/sixtyshareswhiskey/uploads/ || exit 1
 rm -f *
+> /srv/sixtyshareswhiskey/chat.log
+HOSTNAME=$(hostname)
+sudo openssl req -x509 -newkey rsa:4096 \
+  -keyout "/srv/sixtyshareswhiskey/certs/key.pem" \
+  -out "/srv/sixtyshareswhiskey/certs/cert.pem" \
+  -days 1 \
+  -nodes \
+  -subj "/C=XX/ST=$HOSTNAME/L=$HOSTNAME/O=$HOSTNAME/OU=$HOSTNAME/CN=127.0.0.1"
+
+sudo chmod 600 "/srv/sixtyshareswhiskey/certs/key.pem"
+sudo chmod 644 "/srv/sixtyshareswhiskey/certs/cert.pem"
+
 EOF
 sudo chmod +x /srv/sixtyshareswhiskey/cleanup.sh
 
