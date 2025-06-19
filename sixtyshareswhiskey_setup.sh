@@ -1,6 +1,52 @@
 #!/bin/bash
-
 set -e
+
+function print_usage() {
+  echo
+  echo "Usage: $0 --country=CODE --password=PASSWORD"
+  echo
+  echo "Options:"
+  echo "  --country=CODE       Two-letter country code (e.g., US, PL)"
+  echo "  --password=PASSWORD  Password string (e.g., mySecret123)"
+  echo
+  echo "Both options are required."
+  echo "Example:"
+  echo "  $0 --country=PL --password=secret123"
+  echo
+  exit 1
+}
+
+# Default values
+COUNTRY="US"
+PASSWORD="CHANGEME"
+
+# Parse arguments
+for arg in "$@"
+do
+  case $arg in
+    --country=*)
+      COUNTRY="${arg#*=}"
+      ;;
+    --password=*)
+      PASSWORD="${arg#*=}"
+      ;;
+    *)
+      echo "Unknown argument: $arg"
+      print_usage
+      ;;
+  esac
+done
+
+if [[ -z "$COUNTRY" || -z "$PASSWORD" ]]; then
+  echo "Error: --country and --password are required."
+  print_usage
+fi
+
+if [[ ! "$COUNTRY" =~ ^[A-Z]{2}$ ]]; then
+  echo "Error: --country must be exactly two uppercase letters (e.g., US, PL, DE)."
+  exit 1
+fi
+
 
 echo "[*] Updating system..."
 sudo apt-get update && sudo apt-get full-upgrade -y
@@ -66,24 +112,13 @@ EOL
 
 sudo systemctl restart dnsmasq
 
-echo "[*] Configuring hostapd..."
+echo "[*] Moving hostapd configuration"
 sudo mkdir -p /etc/hostapd
-sudo tee /etc/hostapd/hostapd.conf > /dev/null <<EOL
-country_code=US       # ← change to your country code
-interface=wlan0
-driver=nl80211
-ssid=SixtySharesWhiskey
-hw_mode=g
-channel=6
-wmm_enabled=0
-macaddr_acl=0
-auth_algs=1
-ignore_broadcast_ssid=0
-wpa=2
-wpa_passphrase=CHANGEME
-wpa_key_mgmt=WPA-PSK
-rsn_pairwise=CCMP
-EOL
+sed -i \
+  -e "s/^country_code=XX[[:space:]]*# ← change to your country code/country_code=$COUNTRY/" \
+  -e "s/^wpa_passphrase=CHANGEME/wpa_passphrase=$PASSWORD/" \
+  hostapd.conf
+sudo mv hostapd.conf /etc/hostapd/
 
 sudo tee /etc/default/hostapd > /dev/null <<EOL
 DAEMON_CONF="/etc/hostapd/hostapd.conf"
@@ -128,58 +163,8 @@ sudo openssl req -x509 -newkey rsa:4096 \
 sudo chmod 600 /srv/sixtyshareswhiskey/certs/key.pem
 sudo chmod 644 /srv/sixtyshareswhiskey/certs/cert.pem
 
-
-sudo tee /etc/nginx/sites-available/sixtyshareswhiskey > /dev/null <<EOL
-server {
-    listen 80 default_server;
-    server_name _;
-
-    # Redirect all HTTP requests to HTTPS
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    server_name _;
-
-    ssl_certificate /srv/sixtyshareswhiskey/certs/cert.pem;
-    ssl_certificate_key /srv/sixtyshareswhiskey/certs/key.pem;
-
-    # Allow large uploads without limit
-    client_max_body_size 0;
-
-    root /srv/sixtyshareswhiskey;
-    index index.html;
-
-    # Serve static files
-    location / {
-        try_files $uri $uri/ =404;
-    }
-
-    # Proxy /upload to Flask app on localhost:5000
-    location /upload {
-        proxy_pass        http://127.0.0.1:5000;
-        proxy_set_header  Host              $host;
-        proxy_set_header  X-Real-IP         $remote_addr;
-        proxy_set_header  X-Forwarded-For   $proxy_add_x_forwarded_for;
-    }
-
-    # Proxy /chat to Flask app on localhost:5000
-    location /chat {
-        proxy_pass        http://127.0.0.1:5000;
-        proxy_set_header  Host              $host;
-        proxy_set_header  X-Real-IP         $remote_addr;
-        proxy_set_header  X-Forwarded-For   $proxy_add_x_forwarded_for;
-    }
-
-    # Serve uploads directory with directory listing enabled
-    location /uploads {
-        alias /srv/sixtyshareswhiskey/uploads;
-        autoindex on;
-    }
-}
-EOL
-
+echo "[*] Moving server conf to nginx sites-available"
+sudo mv sixtyshareswhiskey /etc/nginx/sites-available/ 
 sudo ln -sf /etc/nginx/sites-available/sixtyshareswhiskey /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 
@@ -190,8 +175,6 @@ else
     sudo sed -i 's/client_max_body_size .*/client_max_body_size 0;/' /etc/nginx/nginx.conf
 fi
 
-sudo systemctl restart nginx
-
 echo "[*] Setting up Python virtual environment for Flask..."
 sudo mkdir -p /srv/sixtyshareswhiskey
 sudo chown "$(whoami):$(whoami)" /srv/sixtyshareswhiskey
@@ -199,264 +182,14 @@ python3 -m venv /srv/sixtyshareswhiskey/venv
 source /srv/sixtyshareswhiskey/venv/bin/activate
 /srv/sixtyshareswhiskey/venv/bin/pip install --upgrade pip flask
 
-echo "[*] Creating Flask backend (with anonymous chat)..."
-cat <<'EOF' > /srv/sixtyshareswhiskey/app.py
-from flask import Flask, request, jsonify
-from flask_bcrypt import Bcrypt
-import os
-from datetime import datetime
+echo "[*] Moving Flask backend (with anonymous chat)..."
+mv app.py /srv/sixtyshareswhiskey/
 
-UPLOAD_FOLDER = '/srv/sixtyshareswhiskey/uploads'
-CHAT_LOG = '/srv/sixtyshareswhiskey/chat.log'
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+echo "[*] Moving minimal HTML frontend (with upload + chat)..."
+mv index.html style.css /srv/sixtyshareswhiskey/
 
-
-##TLS settings
-context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-context.minimum_version = ssl.TLSVersion.TLSv1_2
-context.maximum_version = ssl.TLSVersion.TLSv1_3
-context.set_ciphers("ECDHE+AESGCM:ECDHE+CHACHA20")
-context.set_ecdh_curve("X25519")
-context.options |= ssl.OP_CIPHER_SERVER_PREFERENCE
-context.options |= ssl.OP_NO_COMPRESSION
-context.load_cert_chain(certfile='/srv/sixtyshareswhiskey/certs/cert.pem', keyfile='/srv/sixtyshareswhiskey/certs/key.pem')
-
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return "No file part", 400
-    file = request.files['file']
-    if file.filename == '':
-        return "No selected file", 400
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"{timestamp}_{file.filename}"
-    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-    return "Upload successful", 200
-
-@app.route('/chat', methods=['GET'])
-def get_chat():
-    messages = []
-    if os.path.exists(CHAT_LOG):
-        with open(CHAT_LOG, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    ts, msg = line.split('|||', 1)
-                    messages.append({'timestamp': ts, 'message': msg})
-                except ValueError:
-                    continue
-    return jsonify({'messages': messages})
-
-@app.route('/chat', methods=['POST'])
-def post_chat():
-    msg = request.form.get('message', '').strip()
-    if not msg:
-        return "Empty message", 400
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    entry = f"{timestamp}|||{msg}\n"
-    with open(CHAT_LOG, 'a', encoding='utf-8') as f:
-        f.write(entry)
-    return "Message received", 200
-
-if __name__ == "__main__":
-    app.run(ssl_context=context, host="127.0.0.1", port=5000)
-EOF
-
-echo "[*] Installing minimal HTML frontend (with upload + chat)..."
-cat <<'EOF' > /srv/sixtyshareswhiskey/index.html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>SixtySharesWhiskey</title>
-  <style>
-    body { background: #121212; color: #f0f0f0; font-family: "Segoe UI", sans-serif; display: flex; flex-direction: column; align-items: center; padding: 2rem; }
-    h1 { color: #00e0ff; font-size: 2rem; margin-bottom: 1rem; }
-    form.upload-box { background: #1e1e1e; border: 2px dashed #444; border-radius: 10px; width: 100%; max-width: 500px; padding: 2rem; text-align: center; transition: border-color 0.3s ease; margin-bottom: 2rem; }
-    .upload-box.dragover { border-color: #00e0ff; }
-    input[type="file"] { display: none; }
-    .browse-label { color: #00e0ff; cursor: pointer; }
-    .submit-btn { background: #00e0ff; color: #000; border: none; padding: 0.6rem 1.5rem; border-radius: 5px; font-weight: bold; font-size: 1rem; margin-top: 1rem; cursor: pointer; }
-    .link { margin-top: 1.5rem; }
-    .link a { color: #90caf9; text-decoration: none; }
-    .link a:hover { text-decoration: underline; }
-    .message { margin-top: 1rem; font-size: 0.95rem; }
-    #preview { margin-top: 1rem; }
-    #preview img { max-width: 100px; max-height: 100px; margin: 0.5rem; border-radius: 5px; }
-    .progress { width: 100%; background: #333; border-radius: 10px; margin-top: 1rem; height: 20px; overflow: hidden; }
-    .progress-bar { height: 100%; width: 0%; background: #00e0ff; transition: width 0.3s ease; }
-    /* Chat styles */
-    .chat-container { width: 100%; max-width: 500px; background: #1e1e1e; border: 1px solid #444; border-radius: 8px; padding: 1rem; margin-top: 2rem; }
-    .chat-messages { background: #121212; border: 1px solid #333; border-radius: 5px; padding: 1rem; height: 200px; overflow-y: auto; margin-bottom: 1rem; }
-    .chat-messages .msg { margin-bottom: 0.5rem; }
-    .chat-messages .timestamp { color: #888; font-size: 0.8rem; margin-right: 0.5rem; }
-    .chat-form { display: flex; }
-    .chat-input { flex: 1; padding: 0.5rem; border: 1px solid #333; border-radius: 5px; background: #121212; color: #f0f0f0; }
-    .chat-submit { background: #00e0ff; color: #000; border: none; padding: 0.5rem 1rem; border-radius: 5px; margin-left: 0.5rem; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <h1>SixtySharesWhiskey</h1>
-
-  <!-- Upload Form -->
-  <form class="upload-box" id="uploadForm" method="post" action="/upload" enctype="multipart/form-data">
-    <p>Drag and drop a file here</p>
-    <p>or <label for="fileElem" class="browse-label">browse</label></p>
-    <input type="file" name="file" id="fileElem" required>
-    <button class="submit-btn" type="submit">Upload</button>
-    <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
-    <div class="message" id="message"></div>
-    <div id="preview"></div>
-  </form>
-  <div class="link"><p><a href="/uploads">View Uploaded Files</a></p></div>
-
-  <!-- Anonymous Chat Box -->
-  <div class="chat-container">
-    <div class="chat-messages" id="chatMessages">
-      <!-- Messages will be loaded here -->
-    </div>
-    <form class="chat-form" id="chatForm">
-      <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." required>
-      <button type="submit" class="chat-submit">Send</button>
-    </form>
-  </div>
-
-  <script>
-    // Upload form logic
-    const dropArea = document.getElementById("uploadForm");
-    const fileInput = document.getElementById("fileElem");
-    const messageElem = document.getElementById("message");
-    const preview = document.getElementById("preview");
-    const progressBar = document.getElementById("progressBar");
-    dropArea.addEventListener("dragover", (e) => { e.preventDefault(); dropArea.classList.add("dragover"); });
-    dropArea.addEventListener("dragleave", () => { dropArea.classList.remove("dragover"); });
-    dropArea.addEventListener("drop", (e) => {
-      e.preventDefault();
-      dropArea.classList.remove("dragover");
-      if (e.dataTransfer.files.length > 0) {
-        fileInput.files = e.dataTransfer.files;
-        showPreview(e.dataTransfer.files[0]);
-      }
-    });
-    fileInput.addEventListener("change", () => {
-      if (fileInput.files.length > 0) {
-        showPreview(fileInput.files[0]);
-      }
-    });
-    dropArea.addEventListener("submit", (e) => {
-      e.preventDefault();
-      messageElem.textContent = "";
-      progressBar.style.width = "0%";
-      if (fileInput.files.length === 0) {
-        messageElem.textContent = "Please select a file first.";
-        return;
-      }
-      const formData = new FormData();
-      formData.append("file", fileInput.files[0]);
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", "/upload", true);
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const percent = (e.loaded / e.total) * 100;
-          progressBar.style.width = percent + "%";
-        }
-      };
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          messageElem.textContent = "Upload successful!";
-          fileInput.value = "";
-        } else {
-          messageElem.textContent = "Upload failed. (" + xhr.status + ")";
-        }
-        progressBar.style.width = "0%";
-      };
-      xhr.onerror = () => {
-        messageElem.textContent = "Upload failed (network error).";
-        progressBar.style.width = "0%";
-      };
-      xhr.send(formData);
-    });
-    function showPreview(file) {
-      preview.innerHTML = "";
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = document.createElement("img");
-          img.src = e.target.result;
-          preview.appendChild(img);
-        };
-        reader.readAsDataURL(file);
-      }
-    }
-
-    // Chat logic (wrapped to ensure DOM is loaded)
-    window.addEventListener('DOMContentLoaded', () => {
-      const chatForm = document.getElementById("chatForm");
-      const chatInput = document.getElementById("chatInput");
-      const chatMessages = document.getElementById("chatMessages");
-
-      chatForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const text = chatInput.value.trim();
-        if (!text) return;
-        await fetch('/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: 'message=' + encodeURIComponent(text)
-        });
-        chatInput.value = '';
-        loadMessages();
-      });
-
-      async function loadMessages() {
-        const resp = await fetch('/chat');
-        if (!resp.ok) return;
-        const data = await resp.json();
-        chatMessages.innerHTML = '';
-        data.messages.forEach(entry => {
-          const div = document.createElement('div');
-          div.classList.add('msg');
-          const ts = document.createElement('span');
-          ts.classList.add('timestamp');
-          ts.textContent = '[' + entry.timestamp + ']';
-          const txt = document.createElement('span');
-          txt.textContent = entry.message;
-          div.appendChild(ts);
-          div.appendChild(txt);
-          chatMessages.appendChild(div);
-        });
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-      }
-
-      loadMessages();
-      setInterval(loadMessages, 5000);
-    });
-  </script>
-</body>
-</html>
-EOF
-
-echo "[*] Creating cleanup script..."
-cat <<'EOF' > /srv/sixtyshareswhiskey/cleanup.sh
-#!/bin/bash
-cd /srv/sixtyshareswhiskey/uploads/ || exit 1
-rm -f *
-> /srv/sixtyshareswhiskey/chat.log
-HOSTNAME=$(hostname)
-sudo openssl req -x509 -newkey rsa:4096 \
-  -keyout "/srv/sixtyshareswhiskey/certs/key.pem" \
-  -out "/srv/sixtyshareswhiskey/certs/cert.pem" \
-  -days 1 \
-  -nodes \
-  -subj "/C=XX/ST=$HOSTNAME/L=$HOSTNAME/O=$HOSTNAME/OU=$HOSTNAME/CN=127.0.0.1"
-
-sudo chmod 600 "/srv/sixtyshareswhiskey/certs/key.pem"
-sudo chmod 644 "/srv/sixtyshareswhiskey/certs/cert.pem"
-
-EOF
+echo "[*] Moving cleanup script..."
+mv cleanup.sh /srv/sixtyshareswhiskey/
 sudo chmod +x /srv/sixtyshareswhiskey/cleanup.sh
 
 echo "[*] Scheduling cleanup every day at midnight..."
@@ -466,33 +199,20 @@ sudo crontab /tmp/mycron
 rm /tmp/mycron
 
 echo "[*] Creating systemd service for Flask app..."
-sudo tee /etc/systemd/system/sixtyshareswhiskey.service > /dev/null <<EOL
-[Unit]
-Description=SixtySharesWhiskey Upload & Chat Server
-After=network.target
+mv sixtyshareswhiskey.service /etc/systemd/system/ 
 
-[Service]
-ExecStart=/srv/sixtyshareswhiskey/venv/bin/python /srv/sixtyshareswhiskey/app.py
-WorkingDirectory=/srv/sixtyshareswhiskey
-Restart=always
-User=root
-
-[Install]
-WantedBy=multi-user.target
-EOL
-
+echo "[*] Enabling and starting services..."
 sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
 sudo systemctl enable sixtyshareswhiskey
 sudo systemctl start sixtyshareswhiskey
-
-echo "[*] Enabling and starting services..."
+sudo systemctl restart nginx
 sudo systemctl unmask hostapd
 sudo systemctl enable hostapd
 sudo systemctl enable dnsmasq
 sudo systemctl restart hostapd
 sudo systemctl restart dnsmasq
 
-echo "[✓] SixtySharesWhiskey is ready. Connect to the hotspot and visit http://10.10.10.1"
+echo "[✓] SixtySharesWhiskey is ready. Connect to the hotspot and visit https://10.10.10.1"
 echo "[*] Thank you for installing, God Bless!"
 echo "[*] - Sixty"
