@@ -71,5 +71,5 @@ No login or tracking with everything being anonymous and local
 
 Ideal for drops, community share boxes, or field deployments
 
-Files are deleted after 24 hours by cron jobs
+Files and chat log are deleted after 24 hours by cron jobs
 
