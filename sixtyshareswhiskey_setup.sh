@@ -8,8 +8,16 @@ function print_usage() {
   echo "Options:"
   echo "  --country=CODE       Two-letter country code (e.g., US, PL)"
   echo "  --password=PASSWORD  Password string (e.g., mySecret123)"
-  echo
-  echo "Both options are required."
+  echo "  --mode=MODE          Defines mode of installation (kamikaze, standalone, daemon). Default mode is standalone"
+  echo "Modes description:"
+  echo "  --mode=standalone    Default mode: installs and runs with default settings."
+  echo "  --mode=daemon        Similar to standalone, but does not change network settings; installs as a daemon bound to 0.0.0.0."
+  echo "  --mode=kamikaze      Kamikaze mode: similar to standalone, but wipes entire installation after 24 hours, completely removing all traces."
+  echo "  --mode=gateway       Similar to standalone, but uploads saved data to a specified location (e.g., external hard drive)."
+  echo "  --mode=chat          Chat-only functionality; upload endpoint is blocked."
+  echo "  --mode=file-server   File server only; serves files from a directory with no upload functionality."
+
+  echo "Parameters--country and --password are required."
   echo "Example:"
   echo "  $0 --country=PL --password=secret123"
   echo
@@ -19,6 +27,7 @@ function print_usage() {
 # Default values
 COUNTRY="US"
 PASSWORD="CHANGEME"
+MODE="standalone"
 
 # Parse arguments
 for arg in "$@"
@@ -30,6 +39,9 @@ do
     --password=*)
       PASSWORD="${arg#*=}"
       ;;
+    --mode=*)
+      MODE="${arg#*=}"
+      ;;
     *)
       echo "Unknown argument: $arg"
       print_usage
@@ -37,17 +49,44 @@ do
   esac
 done
 
-if [[ -z "$COUNTRY" || -z "$PASSWORD" ]]; then
-  echo "Error: --country and --password are required."
-  print_usage
-fi
+function validate_parameters() {
+  if [[ -z "$COUNTRY" || -z "$PASSWORD" ]]; then
+    echo "Error: --country and --password are required."
+    print_usage
+  fi
 
-if [[ ! "$COUNTRY" =~ ^[A-Z]{2}$ ]]; then
-  echo "Error: --country must be exactly two uppercase letters (e.g., US, PL, DE)."
-  exit 1
-fi
+  if [[ ! "$COUNTRY" =~ ^[A-Z]{2}$ ]]; then
+    echo "Error: --country must be exactly two uppercase letters (e.g., US, PL, DE)."
+    print_usage
+  fi
 
+  if [[ $MODE = "standalone" ]]; then
+    echo "MODE is standalone, proceeding with standard installation"
+    return 0
+  elif [[ $MODE = "daemon" ]]; then
+    echo "MODE is daemon, proceeding with daemon installation mode (no network changes, bound to 0.0.0.0)"
+    return 0
+  elif [[ $MODE = "kamikaze" ]]; then
+    echo "MODE is kamikaze, proceeding with kamikaze installation mode (wipes installation after 24 hours)"
+    return 0
+  elif [[ $MODE = "gateway" ]]; then
+    echo "MODE is gateway, proceeding with gateway installation mode (uploads data to specified location)"
+    return 0
+  elif [[ $MODE = "chat" ]]; then
+    echo "MODE is chat, proceeding with chat-only functionality (upload endpoint blocked)"
+    return 0
+  elif [[ $MODE = "file-server" ]]; then
+    echo "MODE is file-server, proceeding with file server only mode (serves files, no uploads)"
+    return 0
+  else
+    echo "Unknown MODE: $MODE. Please specify a valid mode."
+    print_usage
+  fi
+}
 
+echo "[*] Validating parameters"
+validate_parameters
+ 
 echo "[*] Updating system..."
 sudo apt-get update && sudo apt-get full-upgrade -y
 echo "***********************************************************"
