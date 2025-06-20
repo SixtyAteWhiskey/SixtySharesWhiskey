@@ -1,0 +1,23 @@
+body { background: #000; color: #f0f0f0; font-family: "Segoe UI", sans-serif; display: flex; flex-direction: column; align-items: center; padding: 2rem; }
+    h1 { color: #fff; font-size: 2rem; margin-bottom: 1rem; }
+    form.upload-box { background: #000; border: 2px dashed #fff; border-radius: 10px; width: 100%; max-width: 500px; padding: 2rem; text-align: center; transition: border-color 0.3s ease; margin-bottom: 2rem; }
+    .upload-box.dragover { border-color: #fff; }
+    input[type="file"] { display: none; }
+    .browse-label { color: #fff; cursor: pointer; }
+    .submit-btn { background: #000; color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 5px; font-weight: bold; font-size: 1rem; margin-top: 1rem; cursor: pointer; }
+    .link { margin-top: 1.5rem; }
+    .link a { color: #fff; text-decoration: none; }
+    .link a:hover { text-decoration: underline; }
+    .message { margin-top: 1rem; font-size: 0.95rem; }
+    #preview { margin-top: 1rem; }
+    #preview img { max-width: 100px; max-height: 100px; margin: 0.5rem; border-radius: 5px; }
+    .progress { width: 100%; background: #fff; border-radius: 10px; margin-top: 1rem; height: 20px; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: #000000; transition: width 0.3s ease; }
+    /* Chat styles */
+    .chat-container { width: 100%; max-width: 500px; background: #1e1e1e; border: 1px solid #444; border-radius: 8px; padding: 1rem; margin-top: 2rem; }
+    .chat-messages { background: #121212; border: 1px solid #333; border-radius: 5px; padding: 1rem; height: 200px; overflow-y: auto; margin-bottom: 1rem; }
+    .chat-messages .msg { margin-bottom: 0.5rem; }
+    .chat-messages .timestamp { color: #888; font-size: 0.8rem; margin-right: 0.5rem; }
+    .chat-form { display: flex; }
+    .chat-input { flex: 1; padding: 0.5rem; border: 1px solid #333; border-radius: 5px; background: #121212; color: #f0f0f0; }
+    .chat-submit { background: #000; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 5px; margin-left: 0.5rem; cursor: pointer; }

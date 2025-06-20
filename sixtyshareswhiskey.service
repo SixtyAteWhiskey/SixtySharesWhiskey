@@ -1,0 +1,12 @@
+[Unit]
+Description=SixtySharesWhiskey Upload & Chat Server
+After=network.target
+
+[Service]
+ExecStart=/srv/sixtyshareswhiskey/venv/bin/python /srv/sixtyshareswhiskey/app.py
+WorkingDirectory=/srv/sixtyshareswhiskey
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target
