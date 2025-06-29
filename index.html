@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SixtySharesWhiskey-fork</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>SixtySharesWhiskey_fork</h1>
+
+  <!-- Upload Form -->
+  <form class="upload-box" id="uploadForm" method="post" action="/upload" enctype="multipart/form-data">
+    <p>Drag and drop a file here</p>
+    <p>or <label for="fileElem" class="browse-label">browse</label></p>
+    <input type="file" name="file" id="fileElem" required>
+    <button class="submit-btn" type="submit">Upload</button>
+    <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="message" id="message"></div>
+    <div id="preview"></div>
+  </form>
+  <div class="link"><p><a href="/uploads">View Uploaded Files</a></p></div>
+
+  <!-- Anonymous Chat Box -->
+  <div class="chat-container">
+    <div class="chat-messages" id="chatMessages">
+      <!-- Messages will be loaded here -->
+    </div>
+    <form class="chat-form" id="chatForm">
+      <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." required>
+      <button type="submit" class="chat-submit">Send</button>
+    </form>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
