@@ -177,7 +177,7 @@ function configure_hostapd_to_wait_for_dhcpd() {
   
   if [[ $MODE == "standalone" ]]; then
     sudo mkdir -p /etc/systemd/system/hostapd.service.d
-    mv override.conf /etc/systemd/system/hostapd.service.d/
+    sudo mv override.conf /etc/systemd/system/hostapd.service.d/
   fi
 
   sudo systemctl unmask hostapd
