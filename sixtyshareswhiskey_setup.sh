@@ -308,7 +308,7 @@ function start_the_service() {
 
 function print_success() {
   echo "[✓] SixtySharesWhiskey_fork is ready. Connect to the hotspot and visit https://10.10.10.1"
-  echo "[*] Thank you for installing, God Bless!"
+  echo "[*] Keep on keeping on!"
   echo "[*] - AA-2109"
 }
 
