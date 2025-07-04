@@ -1,6 +1,9 @@
 server {
     listen 443 ssl;
     server_name _;
+    access_log off;
+    error_log /dev/null crit;
+
 
     ssl_certificate     /srv/sixtyshareswhiskey/certs/cert.pem;
     ssl_certificate_key /srv/sixtyshareswhiskey/certs/key.pem;
