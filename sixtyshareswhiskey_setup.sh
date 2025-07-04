@@ -169,7 +169,7 @@ function move_hostapd_conf() {
   fi
   sudo mv hostapd.conf /etc/hostapd/
 
-  sudo echo 'DAEMON_CONF="/etc/hostapd/hostapd.conf"' > /etc/default/hostapd
+  echo 'DAEMON_CONF="/etc/hostapd/hostapd.conf"' | sudo tee /etc/default/hostapd > /dev/null
   }
 
 function configure_hostapd_to_wait_for_dhcpd() {
