@@ -1,8 +1,10 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_bcrypt import Bcrypt
 import os
 from datetime import datetime
+import ssl
 
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_FOLDER = '/srv/sixtyshareswhiskey/uploads'
 CHAT_LOG = '/srv/sixtyshareswhiskey/chat.log'
 app = Flask(__name__)
@@ -14,10 +16,24 @@ context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 context.minimum_version = ssl.TLSVersion.TLSv1_2
 context.maximum_version = ssl.TLSVersion.TLSv1_3
 context.set_ciphers("ECDHE+AESGCM:ECDHE+CHACHA20")
-context.set_ecdh_curve("X25519")
+context.set_ecdh_curve("prime256v1")
 context.options |= ssl.OP_CIPHER_SERVER_PREFERENCE
 context.options |= ssl.OP_NO_COMPRESSION
 context.load_cert_chain(certfile='/srv/sixtyshareswhiskey/certs/cert.pem', keyfile='/srv/sixtyshareswhiskey/certs/key.pem')
+
+
+@app.route('/')
+def serve_index():
+    return send_from_directory('.', 'index.html')
+
+@app.after_request
+def add_hsts_header(response):
+    response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
+    return response
+
+@app.route('/<path:filename>')
+def static_files(filename):
+    return send_from_directory(BASE_DIR, filename)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -30,6 +46,16 @@ def upload_file():
     filename = f"{timestamp}_{file.filename}"
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
     return "Upload successful", 200
+
+@app.route('/uploads')
+def list_uploads():
+    files = os.listdir(app.config['UPLOAD_FOLDER'])
+    links = "\n".join(f'<li><a href="/uploads/{f}">{f}</a></li>' for f in files)
+    return f"<ul>{links}</ul>"
+
+@app.route('/uploads/<path:filename>', methods=['GET'])
+def serve_upload(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/chat', methods=['GET'])
 def get_chat():
@@ -59,4 +85,4 @@ def post_chat():
     return "Message received", 200
 
 if __name__ == "__main__":
-    app.run(ssl_context=context, host="127.0.0.1", port=5000)
+    app.run(ssl_context=context, host="0.0.0.0", port=5000)
