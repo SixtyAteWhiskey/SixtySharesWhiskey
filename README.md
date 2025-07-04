@@ -45,21 +45,19 @@ A. Transfer the file to your pi using SFTP
 OR
 
 B. Use the command ```sudo nano sixtyshareswhiskey_setup.sh``` and then copy and paste in the script contents 
-
-
 Now in nano hit Ctrl + x and save the changes you made.
+
 
 # Run the script!
 
 Now run ```chmod +x sixtyshareswhiskey_setup.sh``` to make the script executeable
 
-Run ```sudo ./sixtyshareswhiskey_setup.sh``` to run the installer
+Run ```sudo ./sixtyshareswhiskey_setup.sh --country=US --password=Your_super_secret_password``` to run the installer
 
-*********************
-***During the install, the script will request that you set your WLAN Country.***
+OR
 
-*DO NOT SKIP THIS, the script will not work without it!!*
-*********************
+Download ```sixtyshareswhiskey_setup.sh``` from Releases and run with ```-- --country=two_UPPECASE_LETTERS --password=Your_super_secret_password```
+
 # After setup:
 
 The Pi will broadcast a Wi-Fi hotspot (by default named SixtySharesWhiskey)
@@ -73,5 +71,5 @@ No login or tracking with everything being anonymous and local
 
 Ideal for drops, community share boxes, or field deployments
 
-Files are deleted after 24 hours by cron jobs
+Files and chat log are deleted after 24 hours by cron jobs
 

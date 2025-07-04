@@ -1,12 +1,28 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_bcrypt import Bcrypt
 import os
 from datetime import datetime
+import ssl
 
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_FOLDER = '/srv/sixtyshareswhiskey/uploads'
 CHAT_LOG = '/srv/sixtyshareswhiskey/chat.log'
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+@app.route('/')
+def serve_index():
+    return send_from_directory('.', 'index.html')
+
+@app.after_request
+def add_hsts_header(response):
+    response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
+    return response
+
+@app.route('/<path:filename>')
+def static_files(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -19,6 +35,16 @@ def upload_file():
     filename = f"{timestamp}_{file.filename}"
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
     return "Upload successful", 200
+
+@app.route('/uploads')
+def list_uploads():
+    files = os.listdir(app.config['UPLOAD_FOLDER'])
+    links = "\n".join(f'<li><a href="/uploads/{f}">{f}</a></li>' for f in files)
+    return f"<ul>{links}</ul>"
+
+@app.route('/uploads/<path:filename>', methods=['GET'])
+def serve_upload(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/chat', methods=['GET'])
 def get_chat():

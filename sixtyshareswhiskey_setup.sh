@@ -83,6 +83,8 @@ function validate_script_parameters() {
     print_usage
   fi
 }
+
+
 function validate_parameters() {
   echo "[*] Validating parameters"
   validate_script_parameters
@@ -170,6 +172,7 @@ function move_hostapd_conf() {
   sudo mv hostapd.conf /etc/hostapd/
 
   echo 'DAEMON_CONF="/etc/hostapd/hostapd.conf"' | sudo tee /etc/default/hostapd > /dev/null
+
   }
 
 function configure_hostapd_to_wait_for_dhcpd() {
@@ -215,6 +218,7 @@ function prepare_certificates() {
   sudo chmod 600 /srv/sixtyshareswhiskey/certs/key.pem
   sudo chmod 644 /srv/sixtyshareswhiskey/certs/cert.pem
 }
+
 
 function move_nginx_conf() {
   echo "[*] Moving server conf to nginx sites-available"
@@ -262,6 +266,7 @@ function configure_flask_app_for_daemon_mode() {
   sed -i 's/"127\.0\.0\.1"/"0.0.0.0"/g' app.py
 }
 
+
 function update_user_for_systemd_service_file() {
   echo "[*] Changing user in systemd service for Flask app..."
   sed -i "s/User=RAND_USER/User=$RAND_USER/; s/Group=RAND_GROUP/Group=$RAND_GROUP/" sixtyshareswhiskey.service
@@ -294,10 +299,10 @@ function configure_self_destruct_cron_job() {
   return 0
 }
 
+
 function get_ip_address() {
   echo "$(ifconfig wlan0 | grep 'inet ' | awk '{print $2}')"
 }
-
 
 
 function start_the_service() {
