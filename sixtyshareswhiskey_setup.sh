@@ -248,11 +248,14 @@ function set_python_for_flask() {
   echo "[*] Setting up Python virtual environment for Flask..."
   sudo mkdir -p /srv/sixtyshareswhiskey
   sudo chown -R "$RAND_USER":"$RAND_GROUP" /srv/sixtyshareswhiskey
-  python3 -m venv /srv/sixtyshareswhiskey/venv
-  source /srv/sixtyshareswhiskey/venv/bin/activate
-  chmod +x /srv/sixtyshareswhiskey/venv/bin/pip
-  /srv/sixtyshareswhiskey/venv/bin/pip install --upgrade pip flask flask_bcrypt
- }
+  
+  sudo -u "$RAND_USER" bash -c "
+    python3 -m venv /srv/sixtyshareswhiskey/venv
+    source /srv/sixtyshareswhiskey/venv/bin/activate
+    /srv/sixtyshareswhiskey/venv/bin/pip install --upgrade pip flask flask_bcrypt
+  "
+}
+
 
 function configure_flask_app_for_daemon_mode() {
   echo "[*] Configuring app.py to listen on 0.0.0.0..."
