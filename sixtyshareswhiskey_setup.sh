@@ -259,6 +259,10 @@ function configure_flask_app_for_daemon_mode() {
   sed -i 's/"127\.0\.0\.1"/"0.0.0.0"/g' app.py
 }
 
+function update_user_for_systemd_service() {
+  sed -i 's/"127\.0\.0\.1"/"0.0.0.0"/g' sixtyshareswhiskey.service
+}
+
 function moving_server_and_frontend_systemd() {
   echo "[*] Moving Flask backend (with anonymous chat)..."
   mv app.py /srv/sixtyshareswhiskey/
