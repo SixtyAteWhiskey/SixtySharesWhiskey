@@ -259,8 +259,9 @@ function configure_flask_app_for_daemon_mode() {
   sed -i 's/"127\.0\.0\.1"/"0.0.0.0"/g' app.py
 }
 
-function update_user_for_systemd_service() {
-  sed -i 's/"127\.0\.0\.1"/"0.0.0.0"/g' sixtyshareswhiskey.service
+function update_user_for_systemd_service_file() {
+  echo "[*] Changing user in systemd service for Flask app..."
+  sed -i "s/User=RAND_USER/User=$RAND_USER/; s/Group=RAND_GROUP/Group=$RAND_GROUP/" sixtyshareswhiskey.service
 }
 
 function moving_server_and_frontend_systemd() {
@@ -290,6 +291,10 @@ function configure_self_destruct_cron_job() {
   return 0
 }
 
+function get_ip_address() {
+  echo "$(ifconfig wlan0 | grep 'inet ' | awk '{print $2}')"
+}
+
 
 
 function start_the_service() {
@@ -311,7 +316,7 @@ function start_the_service() {
 }
 
 function print_success() {
-  echo "[✓] SixtySharesWhiskey_fork is ready. Connect to the hotspot and visit https://10.10.10.1"
+  echo "[✓] SixtySharesWhiskey_fork is ready. Connect to the hotspot and visit https://$(get_ip_address)"
   echo "[*] Keep on keeping on!"
   echo "[*] - AA-2109"
 }
@@ -352,6 +357,8 @@ function installation() {
   prepare_certificates
   move_nginx_conf
   enable_big_uploads
+  create_secure_user
+  update_user_for_systemd_service_file
   set_python_for_flask
 
   if [[ $mode == "standalone" ]]; then
