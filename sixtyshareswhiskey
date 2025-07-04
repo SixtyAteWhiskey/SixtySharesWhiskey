@@ -17,9 +17,6 @@ server {
     # Match: context.options |= ssl.OP_CIPHER_SERVER_PREFERENCE
     ssl_prefer_server_ciphers on;
 
-    # Match: context.options |= ssl.OP_NO_COMPRESSION
-    ssl_compression off;
-
     # (Optional) Add strict transport security
     add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
 
