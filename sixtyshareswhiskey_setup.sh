@@ -233,10 +233,21 @@ function enable_big_uploads() {
 }
 
 
+function create_secure_user() {
+  echo "[*] Creating a user for Flask app"
+  RAND_USER="flask_$(head /dev/urandom | tr -dc a-z0-9 | head -c 6)"
+  sudo useradd --system --no-create-home --shell /usr/sbin/nologin $RAND_USER
+  echo "[*] Created user: $RAND_USER"
+  RAND_GROUP="grp_$(head /dev/urandom | tr -dc a-z0-9 | head -c 6)"
+  sudo groupadd "$RAND_GROUP"
+  sudo usermod -g "$RAND_GROUP" "$RAND_USER"
+  sudo passwd -l $RAND_USER
+}
+
 function set_python_for_flask() {
   echo "[*] Setting up Python virtual environment for Flask..."
   sudo mkdir -p /srv/sixtyshareswhiskey
-  sudo chown "$(whoami):$(whoami)" /srv/sixtyshareswhiskey
+  sudo chown -R "$RAND_USER":"$RAND_GROUP" /srv/sixtyshareswhiskey
   python3 -m venv /srv/sixtyshareswhiskey/venv
   source /srv/sixtyshareswhiskey/venv/bin/activate
   chmod +x /srv/sixtyshareswhiskey/venv/bin/pip
