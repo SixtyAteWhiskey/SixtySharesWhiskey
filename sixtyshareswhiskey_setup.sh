@@ -239,6 +239,7 @@ function set_python_for_flask() {
   sudo chown "$(whoami):$(whoami)" /srv/sixtyshareswhiskey
   python3 -m venv /srv/sixtyshareswhiskey/venv
   source /srv/sixtyshareswhiskey/venv/bin/activate
+  chmod +x /srv/sixtyshareswhiskey/venv/bin/pip
   /srv/sixtyshareswhiskey/venv/bin/pip install --upgrade pip flask flask_bcrypt
  }
 
