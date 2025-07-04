@@ -90,12 +90,7 @@ function validate_parameters() {
 
 function update_the_system() {
   echo "[*] Updating system..."
-  sudo apt-get update && sudo apt-get full-upgrade -y
-  echo "***********************************************************"
-  echo "*****YOU MUST SET YOUR WLAN COUNTRY UNDER LOCALIZATION*****"
-  echo "***********************************************************"
-  read -p "Press [Enter] to continue…"
-  sudo raspi-config
+  sudo apt-get update && sudo apt-get full-upgrade -y || true
 }
 
 function install_dependencies_from_internet() {
