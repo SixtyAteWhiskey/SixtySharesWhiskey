@@ -49,7 +49,7 @@ do
   esac
 done
 
-function validate_parameters() {
+function validate_script_parameters() {
   if [[ -z "$COUNTRY" || -z "$PASSWORD" ]]; then
     echo "Error: --country and --password are required."
     print_usage
@@ -85,7 +85,7 @@ function validate_parameters() {
 }
 function validate_parameters() {
   echo "[*] Validating parameters"
-  validate_parameters
+  validate_script_parameters
 }
 
 function update_the_system() {
@@ -143,14 +143,7 @@ function configure_static_IP() {
     sudo sed -i '/^interface wlan0/,+3d' /etc/dhcpcd.conf
   done
 
-  # 2) Append exactly one fresh stanza with "nolink"
-  sudo tee -a /etc/dhcpcd.conf > /dev/null <<\EOL
-
-interface wlan0
-    static ip_address=10.10.10.1/24
-    nohook wpa_supplicant
-    nolink
-  EOL
+  sudo mv dhcpd.conf /etc/dhcpcd.conf
 }
 
 function restart_dhcpd() {
@@ -166,12 +159,7 @@ function restart_dhcpd() {
 function configure_dnsmask() {
   echo "[*] Configuring dnsmasq..."
   sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.orig || true
-  sudo tee /etc/dnsmasq.conf > /dev/null <<EOL
-interface=wlan0
-dhcp-range=10.10.10.10,10.10.10.100,24h
-address=/#/10.10.10.1
-  EOL
-
+  sudo mv dnsmasq.conf /etc/dnsmasq.conf
   sudo systemctl restart dnsmasq
 }
 
@@ -186,23 +174,17 @@ function move_hostapd_conf() {
   fi
   sudo mv hostapd.conf /etc/hostapd/
 
-  sudo tee /etc/default/hostapd > /dev/null <<EOL
-DAEMON_CONF="/etc/hostapd/hostapd.conf"
-  EOL
+  sudo echo 'DAEMON_CONF="/etc/hostapd/hostapd.conf"' > /etc/default/hostapd
   }
 
 function configure_hostapd_to_wait_for_dhcpd() {
-  # Create a systemd override so hostapd waits for dhcpcd
   echo "[*] Ensuring hostapd waits for dhcpcd on boot..."
   
   if [[ $MODE == "standalone" ]]; then
     sudo mkdir -p /etc/systemd/system/hostapd.service.d
-    sudo tee /etc/systemd/system/hostapd.service.d/override.conf > /dev/null <<EOL
-[Unit]
-Wants=network-online.target dhcpcd.service
-After=network-online.target dhcpcd.service
-EOL
+    mv override.conf /etc/systemd/system/hostapd.service.d/
   fi
+
   sudo systemctl unmask hostapd
   sudo systemctl daemon-reload
   sudo systemctl enable hostapd
@@ -222,12 +204,13 @@ function configure_nginx() {
   echo "[*] Setting up NGINX for web GUI..."
   sudo mkdir -p /srv/sixtyshareswhiskey/uploads
   sudo touch /srv/sixtyshareswhiskey/chat.log
-  sudo find /srv/sixtyshareswhiskey -type d -exec chmod 755 {}
-  sudo find /srv/sixtyshareswhiskey -type f -exec chmod 644 {}
+  sudo find /srv/sixtyshareswhiskey -type d -exec chmod 755 {} \;
+  sudo find /srv/sixtyshareswhiskey -type f -exec chmod 644 {} \;
 }
 
 function prepare_certificates() {
   echo "[*] Preparing certificates..."
+  mkdir -p /srv/sixtyshareswhiskey/certs/
   sudo openssl req -x509 -newkey rsa:4096 \
     -keyout /srv/sixtyshareswhiskey/certs/key.pem \
     -out /srv/sixtyshareswhiskey/certs/cert.pem \
@@ -261,7 +244,7 @@ function set_python_for_flask() {
   sudo chown "$(whoami):$(whoami)" /srv/sixtyshareswhiskey
   python3 -m venv /srv/sixtyshareswhiskey/venv
   source /srv/sixtyshareswhiskey/venv/bin/activate
-  /srv/sixtyshareswhiskey/venv/bin/pip install --upgrade pip flask
+  /srv/sixtyshareswhiskey/venv/bin/pip install --upgrade pip flask flask_bcrypt
  }
 
 function configure_flask_app_for_daemon_mode() {
@@ -274,7 +257,7 @@ function moving_server_and_frontend_systemd() {
   mv app.py /srv/sixtyshareswhiskey/
 
   echo "[*] Moving minimal HTML frontend (with upload + chat)..."
-  mv index.html style.css /srv/sixtyshareswhiskey/
+  mv index.html style.css script.js /srv/sixtyshareswhiskey/
 
   echo "[*] Moving systemd service for Flask app..."
   mv sixtyshareswhiskey.service /etc/systemd/system/ 
@@ -293,7 +276,7 @@ function preparing_cleanup_cronjob() {
 }
 
 function configure_self_destruct_cron_job() {
-
+  return 0
 }
 
 
