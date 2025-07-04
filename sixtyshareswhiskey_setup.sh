@@ -256,7 +256,7 @@ function moving_server_and_frontend_systemd() {
   mv index.html style.css script.js /srv/sixtyshareswhiskey/
 
   echo "[*] Moving systemd service for Flask app..."
-  mv sixtyshareswhiskey.service /etc/systemd/system/ 
+  sudo mv sixtyshareswhiskey.service /etc/systemd/system/ 
 }
 
 function preparing_cleanup_cronjob() {
